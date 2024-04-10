@@ -25,7 +25,7 @@ pub fn pan_orbit_camera(
     mut windows: Query<&mut Window>,
     mut ev_motion: EventReader<MouseMotion>,
     mut ev_touch: EventReader<TouchInput>,
-    input_mouse: Res<Input<MouseButton>>,
+    input_mouse: Res<ButtonInput<MouseButton>>,
     mut query: Query<(&mut PanOrbitCamera, &mut Transform)>,
 ) {
     // change input mapping for orbit and panning here
@@ -35,19 +35,20 @@ pub fn pan_orbit_camera(
     let mut orbit_button_changed = false;
 
     if input_mouse.pressed(orbit_button) {
-        for ev in ev_motion.iter() {
+        for ev in ev_motion.read() {
             rotation_move += ev.delta;
         }
     }
 
     let mut start_pos = Vec2::default();
-    for ev in ev_touch.iter() {
+    for ev in ev_touch.read() {
         // in real apps you probably want to store and track touch ids somewhere
         match ev.phase {
             TouchPhase::Started => {
                 start_pos = ev.position;
             }
             TouchPhase::Moved => {
+                println!("Touch {} move at: {:?}", ev.id, ev.position);
                 rotation_move += (ev.position - start_pos) / 200.;
                 start_pos = ev.position;
             }

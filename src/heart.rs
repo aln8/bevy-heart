@@ -1,22 +1,23 @@
-use std::f32::consts::PI;
-
 use bevy::{
     asset::load_internal_asset,
     prelude::*,
-    reflect::{TypePath, TypeUuid},
-    render::render_resource::{
-        AsBindGroup, Face, PrimitiveTopology, RenderPipelineDescriptor, ShaderRef,
-        SpecializedMeshPipelineError,
+    reflect::TypePath,
+    render::{
+        render_asset::RenderAssetUsages,
+        render_resource::{
+            AsBindGroup, Face, PrimitiveTopology, RenderPipelineDescriptor, ShaderRef,
+            SpecializedMeshPipelineError,
+        },
     },
 };
 use isosurface::{marching_cubes::MarchingCubes, source::CentralDifference};
+use std::f32::consts::PI;
 
 use crate::camera;
 
 pub struct HeartPlugin;
 
-pub const HEART_UTILS_SHADER_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 1752015359394029744);
+pub const HEART_UTILS_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(1752015359394029744);
 
 impl Plugin for HeartPlugin {
     fn build(&self, app: &mut App) {
@@ -42,8 +43,8 @@ fn setup(
     let wall_color = Color::rgb_u8(249, 29, 187);
     // ground plane
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(10.0).into()),
-        material: standard_materials.add(wall_color.into()),
+        mesh: meshes.add(Plane3d::default().mesh().size(10.0, 10.0)),
+        material: standard_materials.add(wall_color),
         ..default()
     });
 
@@ -51,7 +52,7 @@ fn setup(
     let mut transform = Transform::from_xyz(2.5, 2.5, 0.0);
     transform.rotate_z(PI / 2.);
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Box::new(5.0, 0.15, 5.0))),
+        mesh: meshes.add(Mesh::from(Cuboid::new(5.0, 0.15, 5.0))),
         transform,
         material: standard_materials.add(StandardMaterial {
             base_color: wall_color.into(),
@@ -65,7 +66,7 @@ fn setup(
     let mut transform = Transform::from_xyz(0.0, 2.5, -2.5);
     transform.rotate_x(PI / 2.);
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Box::new(5.0, 0.15, 5.0))),
+        mesh: meshes.add(Mesh::from(Cuboid::new(5.0, 0.15, 5.0))),
         transform,
         material: standard_materials.add(StandardMaterial {
             base_color: wall_color.into(),
@@ -90,7 +91,7 @@ fn setup(
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             color: Color::WHITE,
-            intensity: 1500.0,
+            intensity: 1_000_000.0,
             shadows_enabled: true,
             ..default()
         },
@@ -102,8 +103,7 @@ fn setup(
     camera::spawn_camera(commands);
 }
 
-#[derive(AsBindGroup, TypeUuid, TypePath, Debug, Clone)]
-#[uuid = "a3d71c04-d054-4946-80f8-ba6cfbc90cad"]
+#[derive(Asset, AsBindGroup, TypePath, Debug, Clone)]
 struct CustomMaterial {
     #[uniform(0)]
     color: Color,
@@ -194,11 +194,14 @@ impl HeartMesh {
 
 impl From<HeartMesh> for Mesh {
     fn from(h: HeartMesh) -> Self {
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::RENDER_WORLD,
+        );
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, h.vertices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, h.normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, h.uvs);
-        mesh.set_indices(Some(bevy::render::mesh::Indices::U32(h.indices)));
+        mesh.insert_indices(bevy::render::mesh::Indices::U32(h.indices));
         mesh
     }
 }

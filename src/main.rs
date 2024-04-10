@@ -1,3 +1,5 @@
+#![feature(const_type_id)]
+
 use bevy::{prelude::*, window::PresentMode};
 mod camera;
 mod heart;
@@ -9,15 +11,13 @@ fn main() {
         // window origin size
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Snake!".to_string(),
+                title: "Heart!".to_string(),
                 resolution: (400., 400.).into(),
                 present_mode: PresentMode::AutoVsync,
-                fit_canvas_to_parent: true,
                 ..default()
             }),
             ..default()
         }))
         .add_plugins(heart::HeartPlugin)
-        // .add_plugins(snake::SnakePlugin)
         .run();
 }
